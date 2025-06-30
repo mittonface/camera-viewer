@@ -59,13 +59,13 @@ jobs:
 
             # Wait for service to start
             echo "Waiting for service to start..."
-            sleep 30
-            
+            sleep 3
+
             # Health check with retries
             for i in {1..5}; do
               echo "Health check attempt $i/5..."
-              if curl -f -s http://localhost:8080/ >/dev/null 2>&1; then
-                echo "✅ Service is responding!"
+              if curl -f -s http://localhost:8080/health >/dev/null 2>&1; then
+                echo "✅ Service is healthy!"
                 break
               elif [ $i -eq 5 ]; then
                 echo "❌ Health check failed after 5 attempts"

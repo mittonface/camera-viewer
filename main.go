@@ -369,6 +369,15 @@ func main() {
 		}
 	}))
 
+	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"status": "healthy",
+			"timestamp": time.Now().UTC().Format(time.RFC3339),
+			"service": "camera-viewer",
+		})
+	})
+
 	http.HandleFunc("/", basicAuth(func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "index.html")
 	}))
