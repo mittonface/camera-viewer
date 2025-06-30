@@ -129,6 +129,10 @@ deploy: build up ## Build and deploy for production
 .PHONY: update
 update: down build up ## Update deployment (down, build, up)
 
+.PHONY: deploy-server
+deploy-server: ## Deploy to server (run this on server)
+	./deploy.sh
+
 # Utility commands
 .PHONY: check-env
 check-env: ## Check if required environment variables are set
