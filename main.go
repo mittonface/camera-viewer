@@ -369,6 +369,118 @@ func main() {
 		}
 	}))
 
+	http.HandleFunc("/stats", basicAuth(func(w http.ResponseWriter, r *http.Request) {
+		bucketName := os.Getenv("BUCKET_NAME")
+		if bucketName == "" {
+			http.Error(w, "BUCKET_NAME environment variable is not set", http.StatusInternalServerError)
+			return
+		}
+
+		// Get date range from query parameters
+		startDate := r.URL.Query().Get("start_date")
+		endDate := r.URL.Query().Get("end_date")
+		
+		// Default to last 30 days if no range specified
+		if startDate == "" || endDate == "" {
+			now := time.Now()
+			endDate = now.Format("2006-01-02")
+			startDate = now.AddDate(0, 0, -30).Format("2006-01-02")
+		}
+
+		// Parse dates
+		startTime, err := time.Parse("2006-01-02", startDate)
+		if err != nil {
+			http.Error(w, "Invalid start_date format (use YYYY-MM-DD)", http.StatusBadRequest)
+			return
+		}
+		
+		endTime, err := time.Parse("2006-01-02", endDate)
+		if err != nil {
+			http.Error(w, "Invalid end_date format (use YYYY-MM-DD)", http.StatusBadRequest)
+			return
+		}
+
+		// Collect statistics
+		dailyStats := make(map[string]map[string]interface{})
+		totalVideos := 0
+		var totalSize int64 = 0
+		storageClassCounts := make(map[string]int)
+		
+		// Iterate through each day in the range
+		for d := startTime; !d.After(endTime); d = d.AddDate(0, 0, 1) {
+			dateStr := d.Format("2006-01-02")
+			year := fmt.Sprintf("%04d", d.Year())
+			month := fmt.Sprintf("%02d", d.Month())
+			day := fmt.Sprintf("%02d", d.Day())
+			prefix := fmt.Sprintf("%s/%s/%s/", year, month, day)
+
+			result, err := s3Client.ListObjectsV2(ctx, &s3.ListObjectsV2Input{
+				Bucket: aws.String(bucketName),
+				Prefix: aws.String(prefix),
+			})
+
+			if err != nil {
+				// Log error but continue processing other dates
+				log.Printf("Error listing objects for %s: %v", dateStr, err)
+				continue
+			}
+
+			dayVideos := 0
+			var daySize int64 = 0
+			dayStorageClasses := make(map[string]int)
+
+			for _, obj := range result.Contents {
+				if strings.HasSuffix(*obj.Key, ".mp4") {
+					dayVideos++
+					totalVideos++
+					daySize += *obj.Size
+					totalSize += *obj.Size
+					
+					storageClass := string(obj.StorageClass)
+					if storageClass == "" {
+						storageClass = "STANDARD"
+					}
+					dayStorageClasses[storageClass]++
+					storageClassCounts[storageClass]++
+				}
+			}
+
+			// Only include days with videos
+			if dayVideos > 0 {
+				dailyStats[dateStr] = map[string]interface{}{
+					"videos": dayVideos,
+					"size_bytes": daySize,
+					"size_mb": float64(daySize) / (1024 * 1024),
+					"storage_classes": dayStorageClasses,
+				}
+			}
+		}
+
+		// Calculate summary statistics
+		daysWithVideos := len(dailyStats)
+		avgVideosPerDay := 0.0
+		if daysWithVideos > 0 {
+			avgVideosPerDay = float64(totalVideos) / float64(daysWithVideos)
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"period": map[string]string{
+				"start_date": startDate,
+				"end_date": endDate,
+			},
+			"summary": map[string]interface{}{
+				"total_videos": totalVideos,
+				"total_size_bytes": totalSize,
+				"total_size_mb": float64(totalSize) / (1024 * 1024),
+				"days_with_videos": daysWithVideos,
+				"avg_videos_per_day": avgVideosPerDay,
+				"storage_class_distribution": storageClassCounts,
+			},
+			"daily_stats": dailyStats,
+		})
+	}))
+
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]interface{}{
@@ -404,6 +516,7 @@ func main() {
 	fmt.Printf("  - http://localhost:%s/list-months?year=2024\n", port)
 	fmt.Printf("  - http://localhost:%s/list-days?year=2024&month=01\n", port)
 	fmt.Printf("  - http://localhost:%s/list-files-by-date?year=2024&month=01&day=15\n", port)
+	fmt.Printf("  - http://localhost:%s/stats (with optional start_date and end_date params)\n", port)
 
 	if err := http.ListenAndServe(":"+port, nil); err != nil {
 		log.Fatal("Server failed to start:", err)
