@@ -51,8 +51,12 @@ docker-compose run --rm --entrypoint "\
     --no-eff-email \
     -d $DOMAIN" certbot
 
-# Reload nginx with real certificate
-echo "🔄 Reloading nginx with real certificate..."
+# Switch to SSL-enabled nginx configuration
+echo "🔄 Switching to SSL-enabled nginx configuration..."
+cp nginx.conf nginx-current.conf
+docker-compose exec nginx cp /etc/nginx/nginx.conf /etc/nginx/nginx.conf.backup
+docker cp nginx.conf $(docker-compose ps -q nginx):/etc/nginx/nginx.conf
+docker-compose exec nginx nginx -t
 docker-compose exec nginx nginx -s reload
 
 echo "✅ SSL certificate successfully obtained for $DOMAIN!"
