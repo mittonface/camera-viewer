@@ -53,11 +53,11 @@ docker-compose run --rm --entrypoint "\
 
 # Switch to SSL-enabled nginx configuration
 echo "🔄 Switching to SSL-enabled nginx configuration..."
-cp nginx.conf nginx-current.conf
-docker-compose exec nginx cp /etc/nginx/nginx.conf /etc/nginx/nginx.conf.backup
-docker cp nginx.conf $(docker-compose ps -q nginx):/etc/nginx/nginx.conf
-docker-compose exec nginx nginx -t
-docker-compose exec nginx nginx -s reload
+# Update docker-compose to use the SSL-enabled config
+sed -i.backup 's|nginx-initial.conf|nginx.conf|g' docker-compose.yml
+# Restart nginx with the new configuration
+docker-compose stop nginx
+docker-compose up -d nginx
 
 echo "✅ SSL certificate successfully obtained for $DOMAIN!"
 echo "🔒 Your site is now accessible at https://$DOMAIN"
