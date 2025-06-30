@@ -50,6 +50,10 @@ jobs:
             # Stop existing containers
             docker-compose down || true
 
+            # Pull images first to avoid credential issues during startup
+            docker pull nginx:alpine || true
+            docker pull certbot/certbot || true
+            
             # Start with new image
             docker-compose up -d
 
@@ -59,7 +63,7 @@ jobs:
 
             # Wait for service to start
             echo "Waiting for service to start..."
-            sleep 3
+            sleep 5
 
             # Health check with retries (check via nginx proxy)
             for i in {1..5}; do
