@@ -34,6 +34,7 @@ Camera Viewer is designed for scenarios where security cameras automatically rec
 ### Setup
 
 1. **Clone and setup environment:**
+
    ```bash
    git clone <your-repo>
    cd camera-viewer
@@ -42,6 +43,7 @@ Camera Viewer is designed for scenarios where security cameras automatically rec
 
 2. **Configure environment variables:**
    Edit `.env` file with your settings:
+
    ```bash
    # AWS Configuration
    AWS_REGION=us-east-1
@@ -55,6 +57,7 @@ Camera Viewer is designed for scenarios where security cameras automatically rec
    ```
 
 3. **Start the application:**
+
    ```bash
    make dev  # Builds, runs, and shows logs
    ```
@@ -69,16 +72,19 @@ Camera Viewer is designed for scenarios where security cameras automatically rec
 The Makefile provides convenient commands for common operations:
 
 ### Quick Commands
+
 - `make help` - Show all available commands
 - `make dev` - Full development setup (env + build + run + logs)
 - `make env` - Create .env file from .env.example
 
 ### Build Commands
+
 - `make build` - Build the Docker image
 - `make build-no-cache` - Build without using cache
 - `make test-build` - Test build without saving image
 
 ### Run Commands
+
 - `make up` - Start services with docker-compose
 - `make up-build` - Start services and rebuild images
 - `make up-logs` - Start services and show logs
@@ -86,18 +92,21 @@ The Makefile provides convenient commands for common operations:
 - `make restart` - Restart services (down + up)
 
 ### Development Commands
+
 - `make logs` - Show container logs
 - `make status` - Show container status
 - `make shell` - Get shell access to container
 - `make health` - Check container health status
 
 ### Utility Commands
+
 - `make check-env` - Verify environment variables are set
 - `make clean` - Clean up containers and images
 - `make clean-all` - Clean everything (containers, images, volumes)
 - `make open` - Open application in browser
 
 ### Production Commands
+
 - `make deploy` - Build and deploy for production
 - `make update` - Update deployment (down, build, up)
 
@@ -194,14 +203,17 @@ make deploy
 ### Common Issues
 
 1. **"BUCKET_NAME environment variable is not set"**
+
    - Ensure your `.env` file is properly configured
    - Run `make check-env` to verify all variables
 
 2. **"Authentication failed"**
+
    - Check USERNAME and PASSWORD in `.env`
    - Clear browser cache/credentials
 
 3. **"No videos found"**
+
    - Verify S3 bucket structure matches `YYYY/MM/DD/*.mp4`
    - Check AWS credentials have S3 read permissions
    - Ensure bucket name is correct
