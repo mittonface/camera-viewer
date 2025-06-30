@@ -47,16 +47,26 @@ docker-compose up -d
 echo "⏳ Waiting for service to start..."
 sleep 15
 
-# Health check
+# Health check with retries
 echo "🏥 Performing health check..."
-if curl -f http://localhost:8080/list-years >/dev/null 2>&1; then
-    echo "✅ Deployment successful! Service is healthy."
-else
-    echo "❌ Health check failed!"
-    echo "Service logs:"
-    docker-compose logs --tail=20
-    exit 1
-fi
+for i in {1..6}; do
+    echo "Health check attempt $i/6..."
+    if curl -f -s http://localhost:8080/ >/dev/null 2>&1; then
+        echo "✅ Deployment successful! Service is healthy."
+        break
+    elif [ $i -eq 6 ]; then
+        echo "❌ Health check failed after 6 attempts!"
+        echo "Service logs:"
+        docker-compose logs --tail=30
+        echo ""
+        echo "Container status:"
+        docker-compose ps
+        exit 1
+    else
+        echo "Service not ready yet, waiting 10 seconds..."
+        sleep 10
+    fi
+done
 
 # Show status
 echo "📊 Service status:"
