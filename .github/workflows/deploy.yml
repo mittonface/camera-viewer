@@ -54,6 +54,15 @@ jobs:
             docker pull nginx:alpine || true
             docker pull certbot/certbot || true
             
+            # Check if SSL certificates exist and use appropriate config
+            if [ -f data/certbot/conf/live/camera.mittn.ca/fullchain.pem ]; then
+              echo "SSL certificates found, using SSL configuration"
+              sed -i 's|nginx-initial.conf|nginx.conf|g' docker-compose.yml
+            else
+              echo "No SSL certificates, using HTTP-only configuration"
+              sed -i 's|nginx.conf|nginx-initial.conf|g' docker-compose.yml
+            fi
+            
             # Start with new image
             docker-compose up -d
 
