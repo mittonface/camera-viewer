@@ -35,7 +35,7 @@ COPY --from=builder /app/discord-notifier .
 RUN mkdir -p /data
 
 # Add cron job to run every 5 minutes
-RUN echo "*/5 * * * * cd /app && ./discord-notifier >> /var/log/discord-notifier.log 2>&1" > /etc/crontabs/root
+RUN echo "*/1 * * * * cd /app && ./discord-notifier >> /var/log/discord-notifier.log 2>&1" > /etc/crontabs/root
 
 # Create log file
 RUN touch /var/log/discord-notifier.log
