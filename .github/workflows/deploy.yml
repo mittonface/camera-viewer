@@ -7,6 +7,7 @@ on:
 
 env:
   IMAGE_NAME: camera-viewer
+  DISCORD_NOTIFIER_IMAGE_NAME: discord-notifier
 
 jobs:
   validate:
@@ -33,20 +34,36 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build and export Docker image
+      - name: Build and export Camera Viewer Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
           tags: ${{ env.IMAGE_NAME }}:${{ github.sha }},${{ env.IMAGE_NAME }}:latest
-          outputs: type=docker,dest=/tmp/image.tar
+          outputs: type=docker,dest=/tmp/camera-viewer.tar
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Upload image artifact
+      - name: Build and export Discord Notifier Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./discord-notifier
+          tags: ${{ env.DISCORD_NOTIFIER_IMAGE_NAME }}:${{ github.sha }},${{ env.DISCORD_NOTIFIER_IMAGE_NAME }}:latest
+          outputs: type=docker,dest=/tmp/discord-notifier.tar
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Upload Camera Viewer image artifact
         uses: actions/upload-artifact@v4
         with:
-          name: docker-image
-          path: /tmp/image.tar
+          name: camera-viewer-image
+          path: /tmp/camera-viewer.tar
+          retention-days: 1
+
+      - name: Upload Discord Notifier image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: discord-notifier-image
+          path: /tmp/discord-notifier.tar
           retention-days: 1
 
   deploy:
@@ -57,17 +74,27 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Download image artifact
+      - name: Download Camera Viewer image artifact
         uses: actions/download-artifact@v4
         with:
-          name: docker-image
+          name: camera-viewer-image
           path: /tmp
 
-      - name: Load Docker image
-        run: docker load --input /tmp/image.tar
+      - name: Download Discord Notifier image artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: discord-notifier-image
+          path: /tmp
 
-      - name: Compress Docker image
-        run: docker save ${{ env.IMAGE_NAME }}:latest | gzip > camera-viewer.tar.gz
+      - name: Load Docker images
+        run: |
+          docker load --input /tmp/camera-viewer.tar
+          docker load --input /tmp/discord-notifier.tar
+
+      - name: Compress Docker images
+        run: |
+          docker save ${{ env.IMAGE_NAME }}:latest | gzip > camera-viewer.tar.gz
+          docker save ${{ env.DISCORD_NOTIFIER_IMAGE_NAME }}:latest | gzip > discord-notifier.tar.gz
 
       - name: Copy files to server
         uses: appleboy/scp-action@v0.1.7
@@ -75,7 +102,7 @@ jobs:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
-          source: "camera-viewer.tar.gz,docker-compose.yml,Makefile,deploy.sh,nginx.conf,nginx-initial.conf,init-letsencrypt.sh"
+          source: "camera-viewer.tar.gz,discord-notifier.tar.gz,docker-compose.yml,Makefile,deploy.sh,nginx.conf,nginx-initial.conf,init-letsencrypt.sh"
           target: "/root/camera-viewer"
           strip_components: 0
 
@@ -88,8 +115,9 @@ jobs:
           script: |
             cd /root/camera-viewer
 
-            # Load the new Docker image
+            # Load the new Docker images
             docker load < camera-viewer.tar.gz
+            docker load < discord-notifier.tar.gz
 
             # Stop existing containers gracefully
             docker-compose down --timeout 30 || true
@@ -111,7 +139,7 @@ jobs:
             docker-compose up -d
 
             # Clean up
-            rm -f camera-viewer.tar.gz
+            rm -f camera-viewer.tar.gz discord-notifier.tar.gz
             docker image prune -f --filter "until=24h"
 
       - name: Health check

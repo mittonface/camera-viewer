@@ -56,6 +56,30 @@ services:
       - ./data/certbot/www:/var/www/certbot
     entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
 
+  discord-notifier:
+    build: ./discord-notifier
+    image: discord-notifier:latest
+    environment:
+      # AWS Configuration (inherits from camera-viewer)
+      - AWS_REGION=${AWS_REGION:-us-east-1}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - BUCKET_NAME=${BUCKET_NAME}
+      
+      # Discord Configuration
+      - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL}
+      
+      # Database path inside container
+      - NOTIFIER_DB_PATH=/data/discord-notifier.db
+    
+    volumes:
+      # Persist SQLite database
+      - ./data/discord-notifier:/data
+    
+    restart: unless-stopped
+    networks:
+      - app-network
+
 networks:
   app-network:
     driver: bridge
