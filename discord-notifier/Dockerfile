@@ -22,8 +22,8 @@ RUN CGO_ENABLED=1 GOOS=linux go build -a -installsuffix cgo -o discord-notifier 
 # Final stage
 FROM alpine:latest
 
-# Install ca-certificates for HTTPS requests, sqlite libs, and cron
-RUN apk --no-cache add ca-certificates sqlite-libs dcron
+# Install ca-certificates for HTTPS requests, sqlite libs, and busybox-suid for cron
+RUN apk --no-cache add ca-certificates sqlite-libs busybox-suid
 
 # Create app directory
 WORKDIR /app
@@ -41,4 +41,4 @@ RUN echo "*/5 * * * * cd /app && ./discord-notifier >> /var/log/discord-notifier
 RUN touch /var/log/discord-notifier.log
 
 # Start cron in the foreground
-CMD ["crond", "-f", "-l", "2"]
+CMD ["crond", "-f", "-d", "8"]
