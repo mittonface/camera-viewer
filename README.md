@@ -21,6 +21,7 @@ Camera Viewer is designed for scenarios where security cameras automatically rec
 - 🏷️ **Storage indicators** - Visual badges showing S3 storage class
 - 🔒 **Authentication** - Basic HTTP auth protection
 - 📱 **Mobile friendly** - Responsive web interface
+- 🔗 **Deep linking** - Direct links to specific videos (e.g., `/video?key=2024/01/01/video.mp4`)
 - 🐳 **Containerized** - Docker and Docker Compose ready
 
 ## Quick Start

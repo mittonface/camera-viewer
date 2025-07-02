@@ -843,6 +843,34 @@
         }
       });
 
+      async function handleDeepLink() {
+        // Check if we have a video key in the URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const videoKey = urlParams.get('key');
+        
+        if (videoKey) {
+          // Extract date from key (format: YYYY/MM/DD/filename.mp4)
+          const keyParts = videoKey.split('/');
+          if (keyParts.length >= 4) {
+            const year = keyParts[0];
+            const month = keyParts[1];
+            const day = keyParts[2];
+            const filename = keyParts.slice(3).join('/');
+            
+            // Load years and select the correct date
+            await loadYears();
+            await selectYear(year);
+            await selectMonth(month);
+            await selectDay(day);
+            
+            // Play the video
+            setTimeout(() => {
+              playVideo(videoKey, filename);
+            }, 500);
+          }
+        }
+      }
+
       // Auto-refresh latest video every 5 minutes
       setInterval(loadLatestVideo, 5 * 60 * 1000);
 
@@ -850,6 +878,7 @@
       loadYears();
       loadLatestVideo();
       loadStats();
+      handleDeepLink();
     </script>
   </body>
 </html>

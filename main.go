@@ -490,6 +490,12 @@ func main() {
 		})
 	})
 
+	http.HandleFunc("/video", basicAuth(func(w http.ResponseWriter, r *http.Request) {
+		// Handle deep linking to specific videos
+		// Example: /video?key=2024/01/01/video.mp4
+		http.ServeFile(w, r, "index.html")
+	}))
+
 	http.HandleFunc("/", basicAuth(func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "index.html")
 	}))
