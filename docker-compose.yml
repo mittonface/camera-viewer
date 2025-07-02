@@ -10,25 +10,33 @@ services:
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
       - BUCKET_NAME=${BUCKET_NAME}
-      
+
       # Authentication
       - USERNAME=${USERNAME}
       - PASSWORD=${PASSWORD}
-      
+
       # Application Configuration
       - PORT=8080
-    
+
     # Uncomment if you want to use AWS credentials from host
     # volumes:
     #   - ~/.aws:/root/.aws:ro
-    
+
     restart: unless-stopped
     networks:
       - app-network
-    
+
     # Health check
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/health"]
+      test:
+        [
+          "CMD",
+          "wget",
+          "--quiet",
+          "--tries=1",
+          "--spider",
+          "http://localhost:8080/health",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -65,17 +73,18 @@ services:
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
       - BUCKET_NAME=${BUCKET_NAME}
-      
+
       # Discord Configuration
       - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL}
-      
+      - CAMERA_VIEWER_URL=${CAMERA_VIEWER_URL}
+
       # Database path inside container
       - NOTIFIER_DB_PATH=/data/discord-notifier.db
-    
+
     volumes:
       # Persist SQLite database
       - ./data/discord-notifier:/data
-    
+
     restart: unless-stopped
     networks:
       - app-network
