@@ -270,6 +270,44 @@
         color: #333;
         font-weight: bold;
       }
+      .deep-link-container {
+        margin-top: 20px;
+        padding: 15px;
+        background-color: rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+      }
+      .deep-link-label {
+        color: white;
+        margin-bottom: 10px;
+        font-weight: bold;
+      }
+      .deep-link-input {
+        width: 100%;
+        padding: 10px;
+        font-size: 14px;
+        border: none;
+        border-radius: 4px;
+        background-color: white;
+        color: #333;
+        font-family: monospace;
+      }
+      .copy-button {
+        background-color: #007bff;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 4px;
+        cursor: pointer;
+        margin-top: 10px;
+      }
+      .copy-button:hover {
+        background-color: #0056b3;
+      }
+      .copy-feedback {
+        color: #4caf50;
+        margin-left: 10px;
+        display: none;
+      }
     </style>
   </head>
   <body>
@@ -573,6 +611,12 @@
                         <div class="video-container">
                             <h2 class="video-title" id="videoTitle"></h2>
                             <video id="videoPlayer" controls autoplay></video>
+                            <div class="deep-link-container">
+                                <div class="deep-link-label">Deep Link to this Video:</div>
+                                <input type="text" id="deepLinkInput" class="deep-link-input" readonly>
+                                <button class="copy-button" onclick="copyDeepLink()">Copy Link</button>
+                                <span class="copy-feedback" id="copyFeedback">Copied!</span>
+                            </div>
                         </div>
                     `;
             document.body.appendChild(modal);
@@ -590,6 +634,10 @@
           const video = document.getElementById("videoPlayer");
           video.src = data.url;
 
+          // Generate and display deep link
+          const deepLinkUrl = `${window.location.origin}/video?key=${encodeURIComponent(key)}`;
+          document.getElementById("deepLinkInput").value = deepLinkUrl;
+
           // Show modal
           modal.style.display = "block";
         } catch (error) {
@@ -604,6 +652,24 @@
           const video = document.getElementById("videoPlayer");
           video.pause();
           video.src = "";
+        }
+      }
+
+      function copyDeepLink() {
+        const deepLinkInput = document.getElementById("deepLinkInput");
+        deepLinkInput.select();
+        deepLinkInput.setSelectionRange(0, 99999); // For mobile devices
+
+        try {
+          document.execCommand("copy");
+          // Show feedback
+          const feedback = document.getElementById("copyFeedback");
+          feedback.style.display = "inline";
+          setTimeout(() => {
+            feedback.style.display = "none";
+          }, 2000);
+        } catch (err) {
+          alert("Failed to copy link to clipboard");
         }
       }
 
