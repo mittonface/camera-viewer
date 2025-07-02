@@ -57,6 +57,7 @@ func main() {
 	bucketName := os.Getenv("BUCKET_NAME")
 	discordWebhookURL := os.Getenv("DISCORD_WEBHOOK_URL")
 	dbPath := getEnv("NOTIFIER_DB_PATH", "./discord-notifier.db")
+	cameraViewerURL := os.Getenv("CAMERA_VIEWER_URL")
 
 	// Validate required configuration
 	if bucketName == "" {
@@ -136,7 +137,7 @@ func main() {
 						lastModified = *obj.LastModified
 					}
 
-					if err := sendDiscordNotification(discordWebhookURL, bucketName, *obj.Key, fileSize, lastModified); err != nil {
+					if err := sendDiscordNotification(discordWebhookURL, bucketName, *obj.Key, fileSize, lastModified, cameraViewerURL); err != nil {
 						log.Printf("Failed to send Discord notification for %s: %v", *obj.Key, err)
 					} else {
 						// Mark video as posted
@@ -209,7 +210,7 @@ func cleanupOldEntries(db *sql.DB) error {
 	return err
 }
 
-func sendDiscordNotification(webhookURL, bucketName, videoKey string, fileSize int64, lastModified time.Time) error {
+func sendDiscordNotification(webhookURL, bucketName, videoKey string, fileSize int64, lastModified time.Time, cameraViewerURL string) error {
 	// Extract date and filename from the key (format: YYYY/MM/DD/filename.mp4)
 	date := "Unknown"
 	filename := videoKey
@@ -223,34 +224,47 @@ func sendDiscordNotification(webhookURL, bucketName, videoKey string, fileSize i
 	// Format file size
 	sizeStr := formatFileSize(fileSize)
 
+	// Create fields for the embed
+	fields := []DiscordField{
+		{
+			Name:   "📅 Date",
+			Value:  date,
+			Inline: true,
+		},
+		{
+			Name:   "📁 Filename",
+			Value:  filename,
+			Inline: true,
+		},
+		{
+			Name:   "📊 Size",
+			Value:  sizeStr,
+			Inline: true,
+		},
+		{
+			Name:   "🗂️ S3 Key",
+			Value:  fmt.Sprintf("`%s`", videoKey),
+			Inline: false,
+		},
+	}
+	
+	// Add video link if camera viewer URL is configured
+	if cameraViewerURL != "" {
+		videoURL := fmt.Sprintf("%s/video?key=%s", strings.TrimRight(cameraViewerURL, "/"), videoKey)
+		fields = append(fields, DiscordField{
+			Name:   "🔗 Watch Video",
+			Value:  fmt.Sprintf("[Click here to watch](%s)", videoURL),
+			Inline: false,
+		})
+	}
+
 	// Create embed message
 	embed := DiscordEmbed{
 		Title:       "📹 New Video Uploaded",
 		Description: fmt.Sprintf("A new video has been uploaded to S3 bucket `%s`", bucketName),
 		Color:       0x00ff00, // Green color
-		Fields: []DiscordField{
-			{
-				Name:   "📅 Date",
-				Value:  date,
-				Inline: true,
-			},
-			{
-				Name:   "📁 Filename",
-				Value:  filename,
-				Inline: true,
-			},
-			{
-				Name:   "📊 Size",
-				Value:  sizeStr,
-				Inline: true,
-			},
-			{
-				Name:   "🗂️ S3 Key",
-				Value:  fmt.Sprintf("`%s`", videoKey),
-				Inline: false,
-			},
-		},
-		Timestamp: lastModified.Format(time.RFC3339),
+		Fields:      fields,
+		Timestamp:   lastModified.Format(time.RFC3339),
 		Footer: &DiscordFooter{
 			Text: "Camera Viewer S3 Monitor",
 		},

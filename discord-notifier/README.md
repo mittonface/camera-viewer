@@ -86,6 +86,7 @@ CMD ["./discord-notifier"]
 | `BUCKET_NAME`           | S3 bucket name          | (required)              |
 | `DISCORD_WEBHOOK_URL`   | Discord webhook URL     | (required)              |
 | `NOTIFIER_DB_PATH`      | Path to SQLite database | `./discord-notifier.db` |
+| `CAMERA_VIEWER_URL`     | Camera Viewer web URL   | (optional)              |
 
 ## How It Works
 
@@ -104,3 +105,4 @@ The notification includes:
 - File size
 - Full S3 key
 - Upload timestamp
+- Direct link to watch the video (if CAMERA_VIEWER_URL is configured)
