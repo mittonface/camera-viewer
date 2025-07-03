@@ -47,23 +47,14 @@ docker-compose up -d
 echo "⏳ Waiting for service to start..."
 sleep 15
 
-# Health check with retries (check both HTTP and HTTPS)
+# Health check with retries
 echo "🏥 Performing health check..."
 for i in {1..6}; do
     echo "Health check attempt $i/6..."
-    # Try HTTP first (via nginx proxy)
-    if curl -f -s http://localhost/health >/dev/null 2>&1; then
-        echo "✅ HTTP health check successful!"
-        # If HTTPS is configured, try HTTPS as well
-        if curl -f -s -k https://localhost/health >/dev/null 2>&1; then
-            echo "✅ HTTPS health check successful!"
-            echo "Health check response:"
-            curl -s http://localhost/health | jq . || curl -s http://localhost/health
-        else
-            echo "⚠️  HTTPS not yet configured, but HTTP is working"
-            echo "Health check response:"
-            curl -s http://localhost/health | jq . || curl -s http://localhost/health
-        fi
+    if curl -f -s http://localhost:3000/health >/dev/null 2>&1; then
+        echo "✅ Health check successful!"
+        echo "Health check response:"
+        curl -s http://localhost:3000/health | jq . || curl -s http://localhost:3000/health
         break
     elif [ $i -eq 6 ]; then
         echo "❌ Health check failed after 6 attempts!"
@@ -84,11 +75,4 @@ echo "📊 Service status:"
 docker-compose ps
 
 echo "🎉 Deployment completed successfully!"
-echo "🌐 Access your application at:"
-echo "   - HTTP:  http://camera.mittn.ca"
-echo "   - HTTPS: https://camera.mittn.ca (after SSL setup)"
-echo ""
-echo "📋 Next steps for SSL:"
-echo "   1. Ensure DNS points camera.mittn.ca to this server"
-echo "   2. Run: ./init-letsencrypt.sh"
-echo "   3. Your site will be available with SSL!"
+echo "🌐 Access your application at http://camera.mittn.ca (via reverse proxy)"

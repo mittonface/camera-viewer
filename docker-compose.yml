@@ -2,8 +2,8 @@ services:
   camera-viewer:
     build: .
     image: camera-viewer:latest
-    expose:
-      - "8080"
+    ports:
+      - "3000:8080"
     environment:
       # AWS Configuration
       - AWS_REGION=${AWS_REGION:-us-east-1}
