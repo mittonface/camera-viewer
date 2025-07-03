@@ -24,7 +24,7 @@ services:
 
     restart: unless-stopped
     networks:
-      - app-network
+      - proxy-network
 
     # Health check
     healthcheck:
@@ -41,28 +41,6 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
-
-  nginx:
-    image: nginx:alpine
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./data/certbot/conf:/etc/letsencrypt:ro
-      - ./data/certbot/www:/var/www/certbot:ro
-    depends_on:
-      - camera-viewer
-    restart: unless-stopped
-    networks:
-      - app-network
-
-  certbot:
-    image: certbot/certbot
-    volumes:
-      - ./data/certbot/conf:/etc/letsencrypt
-      - ./data/certbot/www:/var/www/certbot
-    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
 
   discord-notifier:
     build: ./discord-notifier
@@ -87,8 +65,8 @@ services:
 
     restart: unless-stopped
     networks:
-      - app-network
+      - proxy-network
 
 networks:
-  app-network:
-    driver: bridge
+  proxy-network:
+    external: true
