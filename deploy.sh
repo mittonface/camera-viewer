@@ -51,10 +51,10 @@ sleep 15
 echo "🏥 Performing health check..."
 for i in {1..6}; do
     echo "Health check attempt $i/6..."
-    if curl -f -s http://localhost:3000/health >/dev/null 2>&1; then
+    if curl -f -s http://localhost:5002/health >/dev/null 2>&1; then
         echo "✅ Health check successful!"
         echo "Health check response:"
-        curl -s http://localhost:3000/health | jq . || curl -s http://localhost:3000/health
+        curl -s http://localhost:5002/health | jq . || curl -s http://localhost:5002/health
         break
     elif [ $i -eq 6 ]; then
         echo "❌ Health check failed after 6 attempts!"
